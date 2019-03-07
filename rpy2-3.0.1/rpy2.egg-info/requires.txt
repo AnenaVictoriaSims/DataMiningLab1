@@ -1,4 +1,0 @@
-pytest
-jinja2
-simplegeneric
-cffi>=1.0.0
