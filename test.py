@@ -5,41 +5,53 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import csv
-import pandas
-import random
+from pandas import DataFrame, read_csv
+import pandas as pd #this is how I usually import pandas
+import random as rn
 
-numSamples = 10                                     #Problem 1 number of data samples to generate for each data set
+
+numSamples = 10                                    #Problem 1 number of data samples to generate for each data set
 centerRows = 0;
-comboSampData = [[0 for x in range(2)] for y in range(numSamples*2)]
-tableData = [[0 for x in range(7)] for y in range(numSamples)]
+#comboSampData = [[0 for x in range(2)] for y in range(numSamples)]
+tableData = [[0 for x in range(7)] for y in range(numSamples*2)]
 
 #----------------------------------------- Generate the random Gaussian data ------------------------------------------#
 def genGauss2D(mean1, cov1, mean2, cov2):                    
-  x,y = np.random.multivariate_normal(mean1, cov1, numSamples)   #Get 1st set of random data 
-  a,b = np.random.multivariate_normal(mean2, cov2, numSamples)   #Get 2nd set of random data
+  #x = np.random.multivariate_normal(mean1, cov1, numSamples)    #Get 2D array of random data (2col, 500row)
+  #y = np.random.multivariate_normal(mean2, cov2, numSamples)    #Get 2D array of random data (2col, 500row)
+  #sampleData = x,y
   i = 0
+
+  xData = pd.DataFrame(np.random.multivariate_normal(mean1, cov1, numSamples))
+  yData = pd.DataFrame(np.random.multivariate_normal(mean2, cov2, numSamples))
+  z = pd.concat([xData, yData], ignore_index=True)
   
-  for pair in comboSampData:
-    if i >= numSamples:
-      i = 0
-      pair[0] = sampData2[i][0]
-      pair[1] = sampData2[i][1]
-    else:
-      pair[0] = sampData1[i][0]
-      pair[1] = sampData1[i][1]
+  while i < (numSamples*2):
+    z.loc[i,0] = round(z.loc[i,0],2)
+    z.loc[i,1] = round(z.loc[i,1],2)
     i += 1
-  
-  print(sampData1)
-  return comboSampData, sampData1, sampData2
+
+  #i = 0
+  #for pair in comboSampData:
+    #if i >= numSamples:
+      #i = 0
+      #pair[0] = sampData2[i][0]
+      #pair[1] = sampData2[i][1]
+    #else:
+      #pair[0] = sampData1[i][0]
+      #pair[1] = sampData1[i][1]
+    #i += 1
+  print(z)
+  return z, xData, yData
 
 #-------------------------------------- Print all calculated data  -------------------------------------#
-def printAllData(D, iteration, k, clusters, priorClusters):
+def printAllData(x, y, iteration, k, clusters, priorClusters):
   if iteration == 1:
     print("Original Center Points. No Data Table Yet...")
     print("Starting Center Points: ",priorClusters,)
     print()
   else:
-    print("Table Data for iteration #", iteration, " with k = ", k)
+    print("Table Data for iteration #", iteration-1, " with k = ", k)
     for row in tableData:
       print(row)
     print("Old Center Points: ",priorClusters," New Center Points: ",clusters)
@@ -48,11 +60,12 @@ def printAllData(D, iteration, k, clusters, priorClusters):
   title = "Iteration #"+str(iteration)+" k = "+str(k)
   if centerRows == 2:
     cntrx1, cntry1, cntrx2, cntry2 = clusters[0][0], clusters[0][1], clusters[1][0], clusters[1][1];
+    #x.reset_index().plot(kind='scatter', x='index', y='obj')
     plt.plot(cntrx1, cntry1, cntrx2, cntry2, marker='X', color='r')
     plt.title(title)
-    #plt.xlim(-10,10)
-    #plt.ylim(-10,10)
-    plt.scatter(D[:,0],D[:,1])
+    #plt.xlim(-20,20)
+    #plt.ylim(-20,20)
+    plt.scatter(x,y)
     #plt.scatter(set2[:,0],set2[:,1])
     plt.show()
   if centerRows == 4:
@@ -60,9 +73,9 @@ def printAllData(D, iteration, k, clusters, priorClusters):
     cntrx3, cntry3, cntrx4, cntry4 = clusters[2][0], clusters[2][1], clusters[3][0], clusters[3][1];
     plt.plot(cntrx1, cntry1, cntrx2, cntry2, cntrx3, cntry3, cntrx4, cntry4, marker='X', color='r') 
     plt.title(title)
-    #plt.xlim(-10,10)
-    #plt.ylim(-10,10)
-    plt.scatter(D[:,0],D[:,1])
+    #plt.xlim(-20,20)
+    #plt.ylim(-20,20)
+    plt.scatter(x,y)
     #plt.scatter(set2[:,0],set2[:,1])
     plt.show()
 
@@ -70,11 +83,11 @@ def printAllData(D, iteration, k, clusters, priorClusters):
 def mykmeans(X, k, c):
   i, count = 0, 0;
 
-  for pair in X:
+  while i < (numSamples*2):
     num = 1
     while num <= centerRows:
       a, b = c[num-1][0], c[num-1][1];
-      x, y = pair[0], pair[1];
+      x, y = X.loc[i,0], X.loc[i,1];
       tableData[i][0], tableData[i][1] = x, y;
       getEuclideanDistance(count, num, k, x, y, a, b)   #Get the centroid for first center
       num += 1
@@ -166,22 +179,22 @@ mean2 = [0, 1.5]                                          #Problem 1 second mean
 cov2 = [[0.9, 0.4],                                       #Probelm 1 diagonal covariance. cov1 & cov2 are the same
        [0.4, 0.9]]   
 
-X, D = genGauss2D(mean1, cov1, mean2, cov2)      #Getting the random data & combining it into one large array
+X, x, y = genGauss2D(mean1, cov1, mean2, cov2)      #Getting the random data & combining it into one large array
 
 #D = np.array([[5,3], [10,15], [15,12], [24,10], [30,45], [85,70], [71,80], [60,78], [55,52], [80,91]])
 
 #2. Call the mykmeans() function with k = 2 and given 2 center points c1 -----------------------------------------------
-iteration = 0
+iteration = 1
 c1 = [[10, 10],                                        #Initial center values given by prof.
       [-10, -10]]
 centerRows = len(c1)
 k = 2
 priorClusters = c1
-printAllData(D, iteration, k, c1, priorClusters) 
+printAllData(x, y, iteration, k, c1, priorClusters) 
 while iteration < 10000:
   iteration += 1
-  clusters = mykmeans(D, k, c1)              #Get new center points
-  printAllData(D, iteration, k, clusters, priorClusters)
+  clusters = mykmeans(X, k, c1)              #Get new center points
+  printAllData(x, y, iteration, k, clusters, priorClusters)
   i, term = 0, False;
 
   while i < centerRows:
@@ -199,7 +212,7 @@ while iteration < 10000:
     c1 = clusters 
 
 #3. Call the mykmeans() function with k = 4 and given 4 center points c2------------------------------------------------
-iteration = 0
+iteration = 1
 c2 = [[10,10],
       [-10, -10],
       [10, -10],
@@ -207,11 +220,11 @@ c2 = [[10,10],
 centerRows = len(c2)
 k = 4
 priorClusters = c2 
-printAllData(D, iteration, k, c2, priorClusters) 
+printAllData(x, y, iteration, k, c2, priorClusters) 
 while iteration < 10000:
   iteration += 1
-  clusters = mykmeans(D, k, c2)              #Get new center points
-  printAllData(D, iteration, k, clusters, priorClusters)
+  clusters = mykmeans(X, k, c2)              #Get new center points
+  printAllData(x, y, iteration, k, clusters, priorClusters)
   i, term = 0, False;
 
   while i < centerRows:
